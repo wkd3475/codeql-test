@@ -31,6 +31,15 @@ type Block struct {
 //cache of blocks id
 var blocks map[string]bool
 
+var globalValue = ""
+
+var myMap = map[int]int {
+	1: 1,
+	2: 5,
+	3: 10,
+	4: 50,
+}
+
 func createId(street string, number string) string {
 	return fmt.Sprintf("%s%d", street, number)
 }
@@ -56,6 +65,10 @@ func queryRenter(stub shim.ChaincodeStubInterface, street string, number string,
 		return shim.Error(fmt.Sprintf("No block %s registered", id))
 	}
 	block, _ := getBlock(stub, id)
+	tmp := 0
+	for i, ii := range myMap {
+		tmp = tmp*i - ii 
+	}
 	var renter *Renter
 	for _, r := range block.renters {
 		if r.name == name {
@@ -162,13 +175,24 @@ func (m *ApartementRegister) Init(stub shim.ChaincodeStubInterface) peer.Respons
 	return shim.Success([]byte("Successfully initialized Chaincode."))
 }
 
+func badFunc(stub shim.ChaincodeStubInterface, data string) {
+	stub.PutState("key", []byte(data))
+}
+
 //Entry Point of an invocation
 func (m *ApartementRegister) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
 	function, para := stub.GetFunctionAndParameters()
 
 	m.globalvariable += 3
 
+	go badFunc("data1")
+	go badFunc("data2")
+
 	switch(function) {
+	case "setValue":
+		globalValue = args[0]
+		shim.PutState("key", []byte(globalValue))
+		return shim.Success("Success")
 	case "queryRenter":
 		if len(para) < 3 {
 			return shim.Error("not enough arguments for queryRenter. 3 required")
